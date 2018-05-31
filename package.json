@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "chrome-remote-interface": "^0.25.6",
+    "moment": "^2.22.1",
+    "nodemailer": "^4.6.5",
     "puppeteer": "^1.4.0"
   },
   "devDependencies": {
