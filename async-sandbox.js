@@ -12,9 +12,4 @@
 
 // test(7).then(val => console.log('outside', val));
 
-const ar = ([a, b]) => {
-    console.log('a', a);
-    console.log('b', b);
-}
-
-ar([3,5]);
+setInterval(() => console.log('running now'), 10 * 1000);
