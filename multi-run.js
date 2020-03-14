@@ -1,7 +1,8 @@
 /* eslint-disable no-console */
 const puppeteer = require('puppeteer');
-const test = require('./docker-test');
-const WORKERS = 8;
+const helper = require('./park-website');
+const WORKERS = 1;
+
 (async () => {
   const browser = await puppeteer.launch();
 
@@ -13,11 +14,10 @@ const WORKERS = 8;
       height: 900,
       deviceScaleFactor: 1,
     });
-    page.setDefaultNavigationTimeout(30 * 1000);
-    const testRun = test
+    const webPromise = helper
       .checkParksSite({page, id: i})
       .catch(e => console.warn(`Worker ${i} hit an error`, e));
-    promises.push(testRun);
+    promises.push(webPromise);
   }
   const TIMER = 'Worker test';
   console.time(TIMER);

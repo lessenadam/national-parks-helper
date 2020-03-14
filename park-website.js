@@ -1,5 +1,4 @@
 /* eslint-disable no-console */
-
 const reloads = 2;
 
 const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -27,22 +26,3 @@ const checkParksSite = async ({id, page}) => {
 };
 
 exports.checkParksSite = checkParksSite;
-
-const checkParksSite2 = async ({page, data: url, worker: {id}}) => {
-  page.setDefaultNavigationTimeout(30 * 1000);
-  console.warn(`Worker ${id} is starting`);
-  await page.goto(url);
-
-  for (let index = 0; index < reloads; index++) {
-    console.log(`Worker ${id} reloading the page`, index + 1);
-    await page.reload({waitUntil: ['networkidle0', 'domcontentloaded']});
-    await timeout(4000);
-  }
-
-  await page.screenshot({path: `screenshots/worker_${id}_test.png`});
-
-  console.warn('Worker has finished', id);
-};
-
-exports.checkParksSite2 = checkParksSite2;
-
