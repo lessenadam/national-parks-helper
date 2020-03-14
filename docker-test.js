@@ -1,25 +1,48 @@
 /* eslint-disable no-console */
-const puppeteer = require('puppeteer');
-// gotta figure everything out
 
 const reloads = 2;
 
-(async () => {
-  const browser = await puppeteer.launch();
-  const page = await browser.newPage();
-  await page.setViewport({
-    width: 1200,
-    height: 900,
-    deviceScaleFactor: 1,
-  });
-  await page.goto('https://www.recreation.gov/camping/campgrounds/232450');
+const timeout = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-  for (let i = 0; i < reloads; i++) {
-    console.log('Reloading the page', i + 1);
-    await page.reload({waitUntil: ['networkidle0', 'domcontentloaded']});
+const randomWait = async () => {
+  const wait = Math.random() * 30 * 1000;
+  await timeout(wait);
+}
+
+const checkParksSite = async ({id, page}) => {
+  await randomWait();
+  console.warn(`Worker ${id} is starting`);
+  await page.goto('https://www.recreation.gov/camping/campgrounds/232450');
+  await randomWait();
+
+  for (let index = 0; index < reloads; index++) {
+    console.log(`Worker ${id} reloading the page`, index + 1);
+    await page.reload();
+    await randomWait();
   }
 
-  await page.screenshot({path: 'screenshots/test.png'});
+  await page.screenshot({path: `screenshots/worker_${id}_test.png`});
 
-  await browser.close();
-})();
+  console.warn('Worker has finished', id);
+};
+
+exports.checkParksSite = checkParksSite;
+
+const checkParksSite2 = async ({page, data: url, worker: {id}}) => {
+  page.setDefaultNavigationTimeout(30 * 1000);
+  console.warn(`Worker ${id} is starting`);
+  await page.goto(url);
+
+  for (let index = 0; index < reloads; index++) {
+    console.log(`Worker ${id} reloading the page`, index + 1);
+    await page.reload({waitUntil: ['networkidle0', 'domcontentloaded']});
+    await timeout(4000);
+  }
+
+  await page.screenshot({path: `screenshots/worker_${id}_test.png`});
+
+  console.warn('Worker has finished', id);
+};
+
+exports.checkParksSite2 = checkParksSite2;
+
