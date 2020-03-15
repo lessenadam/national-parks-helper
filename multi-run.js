@@ -4,6 +4,7 @@ const helper = require('./park-website');
 const WORKERS = 1;
 
 (async () => {
+  // const browser = await puppeteer.launch({devtools: true});
   const browser = await puppeteer.launch();
 
   const promises = [];
