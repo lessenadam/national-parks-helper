@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 const puppeteer = require('puppeteer');
 const helper = require('./park-website');
-const WORKERS = 1;
+const WORKERS = 3;
 
 (async () => {
   // const browser = await puppeteer.launch({devtools: true});
@@ -9,7 +9,9 @@ const WORKERS = 1;
 
   const promises = [];
   for (let i = 0; i < WORKERS; i++) {
-    const page = await browser.newPage();
+    const context = await browser.createIncognitoBrowserContext();
+    // Create a new page in a pristine context.
+    const page = await context.newPage();
     await page.setViewport({
       width: 1200,
       height: 900,
