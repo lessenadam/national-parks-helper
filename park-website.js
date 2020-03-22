@@ -14,7 +14,7 @@ const TO_LOGIN_SELECTOR = '.nav-header-button[aria-label="Log In"]';
 const DATE_PICKER_SELECTOR = '#single-date-picker-1';
 const BOOK_NOW_SELECTOR =
   '.rec-campground-availability-book-now button.sarsa-button-primary';
-const TARGET_DATE = '07/24/2020';
+const TARGET_DATE = '08/01/2020';
 const ALREADY_BOOKED_BUTTON_SELECTOR =
   '.booking-modal button[aria-label="Continue Shopping"]';
 
@@ -30,7 +30,6 @@ const TEST_CAMPGROUND =
 const checkParksSite = async ({id, page}) => {
   const logger = status => console.warn(`Worker ${id} ${status}`);
   logger('is starting');
-  await randomWait();
   await page.goto(TEST_CAMPGROUND);
 
   // START LOGIN
@@ -64,34 +63,37 @@ const checkParksSite = async ({id, page}) => {
   );
 
   // FIND AN AVAILABLE SITE
-  const sites = await page.$$(TABLE_ROW_SELECTOR);
-  const startIndex = Math.floor(Math.random() * sites.length);
-  logger(`starting at site ${startIndex}`);
+  let sites = await page.$$(TABLE_ROW_SELECTOR);
   let availableSite;
-  for (
-    let currentIndex = startIndex, i = 0;
-    i < sites.length;
-    i++, currentIndex === sites.length - 1 ? (currentIndex = 0) : currentIndex++
-  ) {
-    // CHECK IF SITE IS
-    const td1 = await (await (await sites[currentIndex].$(
-      'td:nth-child(3)'
-    )).getProperty('className')).jsonValue();
-    const td2 = await (await (await sites[currentIndex].$(
-      'td:nth-child(4)'
-    )).getProperty('className')).jsonValue();
-    const td3 = await (await (await sites[currentIndex].$(
-      'td:nth-child(5)'
-    )).getProperty('className')).jsonValue();
-    const td4 = await (await (await sites[currentIndex].$(
-      'td:nth-child(6)'
-    )).getProperty('className')).jsonValue();
+  for (let i = 0; i < sites.length; i++) {
+    // CHECK IF SITE IS AVAILABLE
+    const td1 = await (await (await sites[i].$('td:nth-child(3)')).getProperty(
+      'className'
+    )).jsonValue();
+    const td2 = await (await (await sites[i].$('td:nth-child(4)')).getProperty(
+      'className'
+    )).jsonValue();
+    const td3 = await (await (await sites[i].$('td:nth-child(5)')).getProperty(
+      'className'
+    )).jsonValue();
+    const td4 = await (await (await sites[i].$('td:nth-child(6)')).getProperty(
+      'className'
+    )).jsonValue();
     const avail = [td1, td2, td3, td4].every(
       className => className === 'available'
     );
     if (avail) {
-      logger(`found available at index ${currentIndex}`);
-      availableSite = sites[currentIndex];
+      logger(`found available at index ${i}`);
+      availableSite = sites[i];
+      // SCROLL HTML TO THE TOP
+      await page.evaluate(() => {
+        const html = document.querySelector('html');
+        html.scrollHeight = 0;
+      });
+
+      await availableSite.screenshot({
+        path: `screenshots/worker_${id}_avail-site.png`,
+      });
       // SELECT THE SITE FOR 3 NIGHTS
       const start = await availableSite.$('td:nth-child(3)');
       const end = await availableSite.$('td:nth-child(6)');
@@ -99,20 +101,21 @@ const checkParksSite = async ({id, page}) => {
       await end.click();
 
       // NEED TO HANDLE ALREADY SELECTED SITE
-      logger('is going to checkout page');
       await page.click(BOOK_NOW_SELECTOR);
       await timeout(5000);
-      const alreadyBookedButton = await page.$(ALREADY_BOOKED_BUTTON_SELECTOR);
-      if (!alreadyBookedButton) {
+      const url = page.url();
+      console.warn('url', url);
+      if (url.includes('orderdetails')) {
         await page.screenshot({path: `screenshots/worker_${id}_test.png`});
         logger('has finished');
         return;
       }
-
-      alreadyBookedButton.click();
-      // CONTINUE TO SEARCH FOR SITE
+      const alreadyBookedButton = await page.$(ALREADY_BOOKED_BUTTON_SELECTOR);
+      if (alreadyBookedButton) {
+        await alreadyBookedButton.click();
+      }
     }
-    logger(`continuing to index ${currentIndex + 1}`);
+    logger(`continuing to index ${i + 1}`);
   }
 
   // TAKE SOME ACTION IF NOT AVAILABLE
